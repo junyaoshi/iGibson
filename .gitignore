@@ -66,3 +66,7 @@ gibson/assets
 notebook
 build
 dist
+
+# vl_nav
+results
+gibson2/data

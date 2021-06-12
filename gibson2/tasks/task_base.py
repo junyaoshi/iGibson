@@ -47,6 +47,12 @@ class BaseTask():
         for reward_function in self.reward_functions:
             reward += reward_function.get_reward(self, env)
 
+        # reward = 0.0
+        # for reward_function in self.reward_functions:
+        #     func_reward = reward_function.get_reward(self, env)
+        #     print(f'iGibson ||| function: {reward_function} | function reward: {func_reward}')
+        #     reward += func_reward
+
         return reward, info
 
     def get_termination(self, env, collision_links=[], action=None, info={}):
