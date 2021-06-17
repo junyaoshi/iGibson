@@ -54,6 +54,11 @@ class VisualPointNavFixedTask(BaseTask):
             'target_visual_object_visible_to_agent', False
         )
         self.target_pos_vis_obj = target_pos_vis_obj
+        if self.target_visual_object_visible_to_agent:
+            env.simulator.import_object(self.target_pos_vis_obj)
+        else:
+            self.target_pos_vis_obj.load()
+
         self.floor_num = 0
 
         self.load_visualization(env)
@@ -74,11 +79,6 @@ class VisualPointNavFixedTask(BaseTask):
             radius=self.dist_tol,
             length=cyl_length,
             initial_offset=[0, 0, cyl_length / 2.0])
-
-        if self.target_visual_object_visible_to_agent:
-            env.simulator.import_object(self.target_pos_vis_obj)
-        else:
-            self.target_pos_vis_obj.load()
         self.initial_pos_vis_obj.load()
 
         if env.scene.build_graph:
@@ -110,6 +110,7 @@ class VisualPointNavFixedTask(BaseTask):
         :param env: environment instance
         :return: L2 distance to the target position
         """
+        # print(f'positions: {env.robots[0].get_position()[:2]}, {self.target_pos[:2]}')
         return l2_distance(env.robots[0].get_position()[:2],
                            self.target_pos[:2])
 
@@ -145,6 +146,7 @@ class VisualPointNavFixedTask(BaseTask):
         env.land(env.robots[0], self.initial_pos, self.initial_orn)
         self.path_length = 0.0
         self.robot_pos = self.initial_pos[:2]
+        self.target_pos_vis_obj.set_position(self.target_pos)
         self.geodesic_dist = self.get_geodesic_potential(env)
         for reward_function in self.reward_functions:
             reward_function.reset(self, env)

@@ -11,11 +11,23 @@ import numpy as np
 from vl_nav.tasks.visual_point_nav_fixed_task import VisualPointNavFixedTask
 from vl_nav.tasks.visual_point_nav_random_task import VisualPointNavRandomTask
 
-# params
+# env params
 yaml_filename = 'turtlebot_point_nav_stadium.yaml'
 mode = 'gui'
 action_timestep = 1.0 / 10.0
 physics_timestep = 1.0 / 120.0
+device_idx = 1
+
+# object params
+visual_shape = p.GEOM_CYLINDER
+cyl_length = 1.5
+cyl_radius = 0.5
+rgba_color = [0, 0, 1, 1.0]
+initial_offset = [0, 0, cyl_length / 2.0]
+
+# task params
+task = 'visual_point_nav_random'
+target_pos = [5, 5, 0]
 
 
 def main():
@@ -25,22 +37,29 @@ def main():
         mode=mode,
         action_timestep=action_timestep,
         physics_timestep=physics_timestep,
+        device_idx=device_idx
     )
-    cyl_length = 1.5
-    cyl_radius = 0.5
     vis_obj = VisualMarker(
-        visual_shape=p.GEOM_CYLINDER,
-        rgba_color=[0, 0, 1, 1.0],
+        visual_shape=visual_shape,
+        rgba_color=rgba_color,
         radius=cyl_radius,
         length=cyl_length,
-        initial_offset=[0, 0, cyl_length / 2.0]
+        initial_offset=initial_offset
     )
-    task = VisualPointNavRandomTask(
-        env=env,
-        target_pos=[5, 5, 0],
-        target_pos_vis_obj=vis_obj,
-    )
-    env.task = task
+    if task == 'visual_point_nav_fixed':
+        env_task = VisualPointNavFixedTask(
+            env=env,
+            target_pos=target_pos,
+            target_pos_vis_obj=vis_obj
+        )
+    elif task == 'visual_point_nav_random':
+        env_task = VisualPointNavRandomTask(
+            env=env,
+            target_pos_vis_obj=vis_obj
+        )
+    else:
+        raise ValueError(f'Unrecoganized task: {task}')
+    env.task = env_task
 
     for j in range(20):
         env.reset()
