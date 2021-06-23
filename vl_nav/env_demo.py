@@ -1,17 +1,21 @@
-from gibson2.envs.igibson_env import iGibsonEnv
+import os
+import numpy as np
 from time import time
+
 import gibson2
+import pybullet as p
+import logging
+
 from gibson2.objects.cube import Cube
 from gibson2.objects.visual_marker import VisualMarker
 from gibson2.objects.articulated_object import ArticulatedObject, RBOObject
-import os
-import pybullet as p
 from gibson2.render.profiler import Profiler
-import logging
-import numpy as np
+
 from vl_nav.tasks.visual_point_nav_fixed_task import VisualPointNavFixedTask
 from vl_nav.tasks.visual_point_nav_random_task import VisualPointNavRandomTask
-from vl_nav.objects.igibson_object import IGisbonObject
+from vl_nav.tasks.visual_object_nav_task import VisualObjectNavTask
+from vl_nav.objects.igibson_object import iGisbonObject
+from vl_nav.envs.igibson_env import iGibsonEnv
 
 # env params
 yaml_filename = 'turtlebot_object_nav_stadium.yaml'
@@ -28,7 +32,7 @@ rgba_color = [0, 0, 1, 1.0]
 initial_offset = [0, 0, cyl_length / 2.0]
 
 # task params
-task = 'visual_point_nav_random'
+task = 'visual_object_nav'
 target_pos = [5, 5, 0]
 fov = 60
 
@@ -56,7 +60,7 @@ def main():
     #         '2ae75c0f4bf43142e76bc197b3a3ffc0', '2ae75c0f4bf43142e76bc197b3a3ffc0.urdf'
     #     )
     # )
-    vis_obj = IGisbonObject(name='floor_lamp')
+    vis_obj = iGisbonObject(name='floor_lamp')
     if task == 'visual_point_nav_fixed':
         env_task = VisualPointNavFixedTask(
             env=env,
@@ -68,6 +72,8 @@ def main():
             env=env,
             target_pos_vis_obj=vis_obj
         )
+    elif task == 'visual_object_nav':
+        env_task = VisualObjectNavTask(env)
     else:
         raise ValueError(f'Unrecoganized task: {task}')
     env.task = env_task

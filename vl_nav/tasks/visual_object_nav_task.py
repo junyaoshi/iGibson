@@ -17,7 +17,7 @@ from gibson2.reward_functions.point_goal_reward import PointGoalReward
 from gibson2.utils.utils import l2_distance, rotate_vector_3d, cartesian_to_polar
 from gibson2.objects.visual_marker import VisualMarker
 from gibson2.objects.articulated_object import ArticulatedObject
-from vl_nav.objects.igibson_object import IGisbonObject
+from vl_nav.objects.igibson_object import iGisbonObject
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class VisualObjectNavTask(BaseTask):
     Object Navigation Task
     The goal is to navigate to one of the many loaded objects given object name
     """
-    def __init__(self, env, num_objects=5, object_randomization_freq=None):
+    def __init__(self, env):
         """
         :param num_objects: number of objects in the environment
         """
@@ -63,8 +63,8 @@ class VisualObjectNavTask(BaseTask):
         )
         self.floor_num = 0
 
-        self.num_objects = num_objects
-        self.object_randomization_freq = object_randomization_freq
+        self.num_objects = self.config.get('num_objects', 5)
+        self.object_randomization_freq = self.config.get('object_randomization_freq', None)
         self.initialize_scene_objects()
         self.load_visualization(env)
 
@@ -79,15 +79,16 @@ class VisualObjectNavTask(BaseTask):
         else:
             # hardcoding case
             if self.num_objects == 5:
-                self.object_names = ['standing_tv', 'piano', 'mirror', 'fridge', 'chair']
+                self.object_names = ['standing_tv', 'piano', 'mirror', 'fridge', 'floor_lamp']
             else:
                 self.object_names = all_object_names[-self.num_objects:]
+        self.goal_object = np.random.choice(self.object_names)
 
         self.object_dict = {}
         self.object_z_offset_dict = {}
         self.object_pos_dict = {}
         for object_name in self.object_names:
-            self.object_dict[object_name] = IGisbonObject(name=object_name)
+            self.object_dict[object_name] = iGisbonObject(name=object_name)
             self.env.simulator.import_object(self.object_dict[object_name])
             object_zmin = p.getAABB(self.object_dict[object_name].body_id)[0][2]
             if object_zmin < 0:
@@ -119,7 +120,6 @@ class VisualObjectNavTask(BaseTask):
 
         _, initial_pos = env.scene.get_random_point(floor=self.floor_num)
         max_trials = 500
-        dist = 0.0
         for object_name in self.object_names:
             for _ in range(max_trials):
                 _, object_pos = env.scene.get_random_point(floor=self.floor_num)
@@ -133,6 +133,36 @@ class VisualObjectNavTask(BaseTask):
 
         initial_orn = np.array([0, 0, np.random.uniform(0, np.pi * 2)])
         return initial_pos, initial_orn, object_pos_dict
+
+    def load_visualization(self, env):
+        """
+        Load visualization, such as initial and target position, shortest path, etc
+
+        :param env: environment instance
+        """
+        if env.mode != 'gui':
+            return
+
+        cyl_length = 0.2
+        self.initial_pos_vis_obj = VisualMarker(
+            visual_shape=p.GEOM_CYLINDER,
+            rgba_color=[1, 0, 0, 0.3],
+            radius=self.dist_tol,
+            length=cyl_length,
+            initial_offset=[0, 0, cyl_length / 2.0])
+        self.initial_pos_vis_obj.load()
+
+        if env.scene.build_graph:
+            self.num_waypoints_vis = 250
+            self.waypoints_vis = [VisualMarker(
+                visual_shape=p.GEOM_CYLINDER,
+                rgba_color=[0, 1, 0, 0.3],
+                radius=0.1,
+                length=cyl_length,
+                initial_offset=[0, 0, cyl_length / 2.0])
+                for _ in range(self.num_waypoints_vis)]
+            for waypoint in self.waypoints_vis:
+                waypoint.load()
 
     def reset_scene(self, env):
         """
@@ -185,40 +215,16 @@ class VisualObjectNavTask(BaseTask):
         for reward_function in self.reward_functions:
             reward_function.reset(self, env)
 
-    def load_visualization(self, env):
+        self.goal_object = np.random.choice(self.object_names)
+
+    def get_task_obs(self, env):
         """
-        Load visualization, such as initial and target position, shortest path, etc
+        Get task-specific observation, including goal position, current velocities, etc.
 
         :param env: environment instance
+        :return: task-specific observation
         """
-        if env.mode != 'gui':
-            return
-
-        cyl_length = 0.2
-        self.initial_pos_vis_obj = VisualMarker(
-            visual_shape=p.GEOM_CYLINDER,
-            rgba_color=[1, 0, 0, 0.3],
-            radius=self.dist_tol,
-            length=cyl_length,
-            initial_offset=[0, 0, cyl_length / 2.0])
-
-        if self.target_visual_object_visible_to_agent:
-            env.simulator.import_object(self.target_pos_vis_obj)
-        else:
-            self.target_pos_vis_obj.load()
-        self.initial_pos_vis_obj.load()
-
-        if env.scene.build_graph:
-            self.num_waypoints_vis = 250
-            self.waypoints_vis = [VisualMarker(
-                visual_shape=p.GEOM_CYLINDER,
-                rgba_color=[0, 1, 0, 0.3],
-                radius=0.1,
-                length=cyl_length,
-                initial_offset=[0, 0, cyl_length / 2.0])
-                for _ in range(self.num_waypoints_vis)]
-            for waypoint in self.waypoints_vis:
-                waypoint.load()
+        return self.goal_object
 
     def step_visualization(self, env):
         """
@@ -245,3 +251,14 @@ class VisualObjectNavTask(BaseTask):
             for i in range(num_nodes, self.num_waypoints_vis):
                 self.waypoints_vis[i].set_position(
                     pos=np.array([0.0, 0.0, 100.0]))
+
+    def step(self, env):
+        """
+        Perform task-specific step: step visualization and aggregate path length
+
+        :param env: environment instance
+        """
+        self.step_visualization(env)
+        new_robot_pos = env.robots[0].get_position()[:2]
+        self.path_length += l2_distance(self.robot_pos, new_robot_pos)
+        self.robot_pos = new_robot_pos

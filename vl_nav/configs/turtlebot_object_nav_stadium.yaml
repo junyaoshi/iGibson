@@ -18,16 +18,17 @@ is_discrete: false
 velocity: 1.0
 
 # task
-task: None # point_nav_random
-object_dist_min: 1.0
-object_dist_max: 2.0 # 10.0
+task: visual_object_nav
+object_dist_min: 3.0
+object_dist_max: 10.0 # 10.0
 object_dist_keepout: 3.0  # minimum distances between objects
+num_objects: 5
 goal_format: polar
-task_obs_dim: 4
+task_obs_dim: 1
 
 # reward
 reward_type: l2
-success_reward: 0.0  # 10.0
+success_reward: 10.0  # 10.0
 potential_reward_weight: 5.0  # 1.0
 collision_reward_weight: 0.0  # -0.1
 
@@ -35,16 +36,16 @@ collision_reward_weight: 0.0  # -0.1
 discount_factor: 0.99
 
 # termination condition
-dist_tol: 1.5  # 0.5  # 0.36  # body width
-max_step: 500
-max_collisions_allowed: 500
+dist_tol: 1.0  # 0.5  # 0.36  # body width
+max_step: 800  # 500
+max_collisions_allowed: 800 # 500
 
 # misc config
 initial_pos_z_offset: 0.1
 collision_ignore_link_a_ids: [1, 2, 3, 4]  # ignore collisions with these robot links
 
 # sensor spec
-output: [rgb, depth]  # task_obs, , scan
+output: [task_obs, rgb, depth]  # , scan
 # image
 # ASUS Xtion PRO LIVE
 # https://www.asus.com/us/3D-Sensor/Xtion_PRO_LIVE

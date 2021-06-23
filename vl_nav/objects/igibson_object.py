@@ -4,7 +4,7 @@ import pybullet as p
 from gibson2.objects.articulated_object import ArticulatedObject
 
 
-class IGisbonObject(ArticulatedObject):
+class iGisbonObject(ArticulatedObject):
     """
     RBO object from assets/models/rbo
     Reference: https://tu-rbo.github.io/articulated-objects/
@@ -15,7 +15,7 @@ class IGisbonObject(ArticulatedObject):
         object_dir = [f.path for f in os.scandir(dirname) if f.is_dir()][0]
         object_name = os.path.basename(object_dir)
         filename = os.path.join(object_dir, f'{object_name}.urdf')
-        super(IGisbonObject, self).__init__(filename, scale)
+        super(iGisbonObject, self).__init__(filename, scale)
 
     def load(self):
         """
