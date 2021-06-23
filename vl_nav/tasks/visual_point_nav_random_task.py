@@ -84,7 +84,8 @@ class VisualPointNavRandomTask(VisualPointNavFixedTask):
 
         p.removeState(state_id)
 
-        self.target_pos = target_pos
+        x, y, z = target_pos
+        self.target_pos = np.array([x, y, z + self.z_offset])
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
 

@@ -5,6 +5,8 @@ import logging
 
 __version__ = "1.0.1"
 
+import gibson2
+
 logging.getLogger().setLevel(logging.INFO)
 
 with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'global_config.yaml')) as f:

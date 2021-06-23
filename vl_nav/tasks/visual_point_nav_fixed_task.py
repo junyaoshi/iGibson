@@ -59,6 +59,15 @@ class VisualPointNavFixedTask(BaseTask):
         else:
             self.target_pos_vis_obj.load()
 
+        # adjust z position of the object so that it's above ground
+        self.z_offset = 0
+        zmin = p.getAABB(self.target_pos_vis_obj.body_id)[0][2]
+        if zmin < 0:
+            self.z_offset = -zmin
+            x, y, z = self.target_pos
+            self.target_pos = np.array([x, y, z + self.z_offset])
+            self.target_pos_vis_obj.set_position(self.target_pos)
+
         self.floor_num = 0
 
         self.load_visualization(env)
