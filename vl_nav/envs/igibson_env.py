@@ -52,6 +52,7 @@ class iGibsonEnv(BaseEnv):
         :param render_to_tensor: whether to render directly to pytorch tensors
         :param automatic_reset: whether to automatic reset after an episode finishes
         """
+        self.task = task
         super(iGibsonEnv, self).__init__(config_file=config_file,
                                          scene_id=scene_id,
                                          mode=mode,
@@ -60,7 +61,6 @@ class iGibsonEnv(BaseEnv):
                                          device_idx=device_idx,
                                          render_to_tensor=render_to_tensor)
         self.automatic_reset = automatic_reset
-        self.task = task
 
     def load_task_setup(self):
         """

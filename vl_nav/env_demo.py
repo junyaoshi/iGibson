@@ -67,16 +67,17 @@ def main():
             target_pos=target_pos,
             target_pos_vis_obj=vis_obj
         )
+        env.task = env_task
     elif task == 'visual_point_nav_random':
         env_task = VisualPointNavRandomTask(
             env=env,
             target_pos_vis_obj=vis_obj
         )
+        env.task = env_task
     elif task == 'visual_object_nav':
-        env_task = VisualObjectNavTask(env)
+        pass
     else:
         raise ValueError(f'Unrecoganized task: {task}')
-    env.task = env_task
     env.simulator.renderer.set_fov(fov)
 
     for j in range(20):

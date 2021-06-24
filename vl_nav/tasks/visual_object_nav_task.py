@@ -32,6 +32,7 @@ class VisualObjectNavTask(BaseTask):
         :param num_objects: number of objects in the environment
         """
         super(VisualObjectNavTask, self).__init__(env)
+        self.env = env
 
         # minimum distance between object and initial robot position
         self.object_dist_min = self.config.get('object_dist_min', 1.0)
@@ -79,25 +80,29 @@ class VisualObjectNavTask(BaseTask):
         else:
             # hardcoding case
             if self.num_objects == 5:
-                self.object_names = ['standing_tv', 'piano', 'mirror', 'fridge', 'floor_lamp']
+                self.object_names = ['standing_tv', 'piano', 'office_chair', 'toilet', 'plant']
             else:
                 self.object_names = all_object_names[-self.num_objects:]
-        self.goal_object = np.random.choice(self.object_names)
 
         self.object_dict = {}
-        self.object_z_offset_dict = {}
         self.object_pos_dict = {}
+        self.object_orn_dict = {}
         for object_name in self.object_names:
             self.object_dict[object_name] = iGisbonObject(name=object_name)
             self.env.simulator.import_object(self.object_dict[object_name])
-            object_zmin = p.getAABB(self.object_dict[object_name].body_id)[0][2]
-            if object_zmin < 0:
-                object_z_offset = -object_zmin
-                x, y, z = self.object_dict[object_name].get_position()
-                new_pos = [x, y, z + object_z_offset]
-                self.object_dict[object_name].set_position(new_pos)
-                self.object_z_offset_dict[object_name] = object_z_offset
-                self.object_pos_dict[object_name] = new_pos
+            self.object_pos_dict[object_name] = self.object_dict[object_name].get_position()
+            self.object_orn_dict[object_name] = self.object_dict[object_name].get_orientation()
+
+        self.sample_goal_object()
+
+    def sample_goal_object(self):
+        goal_object_idx = np.random.randint(self.num_objects)
+        self.target_name = self.object_names[goal_object_idx]
+        self.target_object = self.object_dict[self.target_name]
+        self.target_pos = self.object_pos_dict[self.target_name]
+        self.target_orn = self.object_orn_dict[self.target_name]
+        # one-hot encoding
+        self.target_obs = np.eye(self.num_objects)[goal_object_idx]
 
     def sample_initial_pose_and_object_pos(self, env):
         """
@@ -107,6 +112,7 @@ class VisualObjectNavTask(BaseTask):
         :return: initial pose and target position
         """
         object_pos_dict ={}
+        object_orn_dict = {}
 
         def placement_is_valid(pos, initial_pos):
             dist = l2_distance(pos, initial_pos)
@@ -121,18 +127,18 @@ class VisualObjectNavTask(BaseTask):
         _, initial_pos = env.scene.get_random_point(floor=self.floor_num)
         max_trials = 500
         for object_name in self.object_names:
+            object_orn_dict[object_name] = np.array([0, 0, np.random.uniform(0, np.pi * 2)])
             for _ in range(max_trials):
                 _, object_pos = env.scene.get_random_point(floor=self.floor_num)
-                if placement_is_valid(object_pos, initial_pos):
-                    x, y, z = object_pos
-                    new_object_pos = np.array([x, y, z + self.object_z_offset_dict[object_name]])
-                    object_pos_dict[object_name] = new_object_pos
+                valid_pos = placement_is_valid(object_pos, initial_pos)
+                if valid_pos:
+                    object_pos_dict[object_name] = object_pos
                     break
-            if not placement_is_valid(object_pos, initial_pos):
+            if not valid_pos:
                 print(f"WARNING: Failed to sample valid position for {object_name}")
 
         initial_orn = np.array([0, 0, np.random.uniform(0, np.pi * 2)])
-        return initial_pos, initial_orn, object_pos_dict
+        return initial_pos, initial_orn, object_pos_dict, object_orn_dict
 
     def load_visualization(self, env):
         """
@@ -151,6 +157,12 @@ class VisualObjectNavTask(BaseTask):
             length=cyl_length,
             initial_offset=[0, 0, cyl_length / 2.0])
         self.initial_pos_vis_obj.load()
+        x, y, z = self.target_pos
+        p.addUserDebugText(
+            text=f'Target: {self.target_name}',
+            textPosition=[x, y, z + 2],
+            textSize=2
+        )
 
         if env.scene.build_graph:
             self.num_waypoints_vis = 250
@@ -163,6 +175,29 @@ class VisualObjectNavTask(BaseTask):
                 for _ in range(self.num_waypoints_vis)]
             for waypoint in self.waypoints_vis:
                 waypoint.load()
+
+    def get_l2_potential(self, env):
+        """
+        Get potential based on L2 distance
+
+        :param env: environment instance
+        :return: L2 distance to the target position
+        """
+        # print(f'positions: {env.robots[0].get_position()[:2]}, {self.target_pos[:2]}')
+        return l2_distance(env.robots[0].get_position()[:2],
+                           self.target_pos[:2])
+
+    def get_potential(self, env):
+        """
+        Compute task-specific potential: distance to the goal
+
+        :param env: environment instance
+        :return: task potential
+        """
+        if self.reward_type == 'l2':
+            return self.get_l2_potential(env)
+        else:
+            raise ValueError(f'Invalid reward type: {self.reward_type}')
 
     def reset_scene(self, env):
         """
@@ -190,10 +225,14 @@ class VisualObjectNavTask(BaseTask):
         # TODO: p.saveState takes a few seconds, need to speed up
         state_id = p.saveState()
         for i in range(max_trials):
-            initial_pos, initial_orn, object_pos_dict = self.sample_initial_pose_and_object_pos(env)
-            reset_success = env.test_valid_position(env.robots[0], initial_pos, initial_orn)
+            initial_pos, initial_orn, object_pos_dict, object_orn_dict = self.sample_initial_pose_and_object_pos(env)
+            reset_success = env.test_valid_position(
+                env.robots[0], initial_pos, initial_orn
+            )
             for object_name, object in self.object_dict.items():
-                reset_success &= env.test_valid_position(object, object_pos_dict[object_name])
+                reset_success &= env.test_valid_position(
+                    object, object_pos_dict[object_name], object_orn_dict[object_name]
+                )
             p.restoreState(state_id)
             if reset_success:
                 break
@@ -204,6 +243,7 @@ class VisualObjectNavTask(BaseTask):
         p.removeState(state_id)
 
         self.object_pos_dict = object_pos_dict
+        self.object_orn_dict = object_orn_dict
         self.initial_pos = initial_pos
         self.initial_orn = initial_orn
 
@@ -211,11 +251,19 @@ class VisualObjectNavTask(BaseTask):
         self.path_length = 0.0
         self.robot_pos = self.initial_pos[:2]
         for object_name, object in self.object_dict.items():
-            self.object_dict[object_name].set_position(self.object_pos_dict[object_name])
+            env.land(object, self.object_pos_dict[object_name], self.object_orn_dict[object_name])
+        self.sample_goal_object()
         for reward_function in self.reward_functions:
             reward_function.reset(self, env)
 
-        self.goal_object = np.random.choice(self.object_names)
+        if env.mode == 'gui':
+            p.removeAllUserDebugItems()
+            x, y, z = self.target_pos
+            p.addUserDebugText(
+                text=f'Target: {self.target_name}',
+                textPosition=[x, y, z + 2],
+                textSize=2
+            )
 
     def get_task_obs(self, env):
         """
@@ -224,7 +272,7 @@ class VisualObjectNavTask(BaseTask):
         :param env: environment instance
         :return: task-specific observation
         """
-        return self.goal_object
+        return self.target_obs
 
     def step_visualization(self, env):
         """
@@ -236,8 +284,6 @@ class VisualObjectNavTask(BaseTask):
             return
 
         self.initial_pos_vis_obj.set_position(self.initial_pos)
-        for object_name, object in self.object_dict.items():
-            self.object_dict[object_name].set_position(self.object_pos_dict[object_name])
 
         if env.scene.build_graph:
             shortest_path, _ = self.get_shortest_path(env, entire_path=True)
