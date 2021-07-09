@@ -11,15 +11,16 @@ from gibson2.termination_conditions.timeout import Timeout
 from gibson2.termination_conditions.out_of_bound import OutOfBound
 from gibson2.termination_conditions.point_goal import PointGoal
 from gibson2.reward_functions.potential_reward import PotentialReward
-from gibson2.reward_functions.collision_reward import CollisionReward
 from gibson2.reward_functions.point_goal_reward import PointGoalReward
-
+from gibson2.reward_functions.collision_reward import CollisionReward
 from gibson2.utils.utils import l2_distance, rotate_vector_3d, cartesian_to_polar
 from gibson2.objects.visual_marker import VisualMarker
-from gibson2.objects.articulated_object import ArticulatedObject
+
+# from vl_nav.reward_functions.collision_reward import CollisionReward
 from vl_nav.objects.igibson_object import iGisbonObject
 
 import numpy as np
+import time
 
 
 class VisualObjectNavTask(BaseTask):
@@ -69,6 +70,13 @@ class VisualObjectNavTask(BaseTask):
         self.initialize_scene_objects()
         self.load_visualization(env)
 
+        self.reset_time_vars()
+
+    def reset_time_vars(self):
+        self.start_time = time.time()
+        self.reset_time = time.time()
+        self.episode_time = time.time()
+
     def initialize_scene_objects(self):
         all_object_names = [
             os.path.basename(f.path)
@@ -80,19 +88,26 @@ class VisualObjectNavTask(BaseTask):
         else:
             # hardcoding case
             if self.num_objects == 5:
-                self.object_names = ['standing_tv', 'piano', 'office_chair', 'toilet', 'plant']
+                self.object_names = ['standing_tv', 'piano', 'office_chair', 'toilet', 'speaker_system']
             else:
                 self.object_names = all_object_names[-self.num_objects:]
 
+        max_radius = 0.0
         self.object_dict = {}
         self.object_pos_dict = {}
         self.object_orn_dict = {}
+        self.object_id_dict = {}
         for object_name in self.object_names:
             self.object_dict[object_name] = iGisbonObject(name=object_name)
-            self.env.simulator.import_object(self.object_dict[object_name])
+            pybullet_id = self.env.simulator.import_object(self.object_dict[object_name])
             self.object_pos_dict[object_name] = self.object_dict[object_name].get_position()
             self.object_orn_dict[object_name] = self.object_dict[object_name].get_orientation()
-
+            self.object_id_dict[object_name] = pybullet_id
+            (xmax, ymax, _), (xmin, ymin, _) = p.getAABB(pybullet_id)
+            object_max_radius = max(abs(xmax - xmin) / 2., abs(ymax - ymin) / 2.)
+            max_radius = max(object_max_radius, max_radius)
+        self.max_radius = max_radius
+        self.termination_conditions[-1].dist_tol = self.max_radius + 0.2
         self.sample_goal_object()
 
     def sample_goal_object(self):
@@ -149,6 +164,8 @@ class VisualObjectNavTask(BaseTask):
         if env.mode != 'gui':
             return
 
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+
         cyl_length = 0.2
         self.initial_pos_vis_obj = VisualMarker(
             visual_shape=p.GEOM_CYLINDER,
@@ -175,6 +192,16 @@ class VisualObjectNavTask(BaseTask):
                 for _ in range(self.num_waypoints_vis)]
             for waypoint in self.waypoints_vis:
                 waypoint.load()
+
+    def get_geodesic_potential(self, env):
+        """
+        Get potential based on geodesic distance
+
+        :param env: environment instance
+        :return: geodesic distance to the target position
+        """
+        _, geodesic_dist = self.get_shortest_path(env)
+        return geodesic_dist
 
     def get_l2_potential(self, env):
         """
@@ -213,11 +240,17 @@ class VisualObjectNavTask(BaseTask):
 
     def reset_agent(self, env):
         """
-                Reset robot initial pose.
-                Sample initial pose and target position, check validity, and land it.
+        Reset robot initial pose.
+        Sample initial pose and target position, check validity, and land it.
 
-                :param env: environment instance
-                """
+        :param env: environment instance
+        """
+        # time
+        self.episode_time = time.time()
+        logging.info(f'Episode time: {self.episode_time - self.start_time:.5f} | '
+                     f'Reset time: {self.reset_time - self.start_time:.5f}')
+        self.reset_time_vars()
+
         reset_success = False
         max_trials = 100
 
@@ -252,6 +285,7 @@ class VisualObjectNavTask(BaseTask):
         self.robot_pos = self.initial_pos[:2]
         for object_name, object in self.object_dict.items():
             env.land(object, self.object_pos_dict[object_name], self.object_orn_dict[object_name])
+        self.geodesic_dist = self.get_geodesic_potential(env)
         self.sample_goal_object()
         for reward_function in self.reward_functions:
             reward_function.reset(self, env)
@@ -265,6 +299,24 @@ class VisualObjectNavTask(BaseTask):
                 textSize=2
             )
 
+        self.reset_time = time.time()
+
+    def get_termination(self, env, collision_links=[], action=None, info={}):
+        """
+        Aggreate termination conditions and fill info
+        """
+        done, info = super(VisualObjectNavTask, self).get_termination(
+            env, collision_links, action, info)
+
+        info['path_length'] = self.path_length
+        if done:
+            info['spl'] = float(info['success']) * \
+                min(1.0, self.geodesic_dist / self.path_length)
+        else:
+            info['spl'] = 0.0
+
+        return done, info
+
     def get_task_obs(self, env):
         """
         Get task-specific observation, including goal position, current velocities, etc.
@@ -273,6 +325,26 @@ class VisualObjectNavTask(BaseTask):
         :return: task-specific observation
         """
         return self.target_obs
+
+    def get_shortest_path(self,
+                          env,
+                          from_initial_pos=False,
+                          entire_path=False):
+        """
+        Get the shortest path and geodesic distance from the robot or the initial position to the target position
+
+        :param env: environment instance
+        :param from_initial_pos: whether source is initial position rather than current position
+        :param entire_path: whether to return the entire shortest path
+        :return: shortest path and geodesic distance to the target position
+        """
+        if from_initial_pos:
+            source = self.initial_pos[:2]
+        else:
+            source = env.robots[0].get_position()[:2]
+        target = self.target_pos[:2]
+        return env.scene.get_shortest_path(
+            self.floor_num, source, target, entire_path=entire_path)
 
     def step_visualization(self, env):
         """

@@ -1,5 +1,4 @@
 from gibson2.utils.utils import quatToXYZW
-from gibson2.envs.env_base import BaseEnv
 from gibson2.tasks.room_rearrangement_task import RoomRearrangementTask
 from gibson2.tasks.point_nav_fixed_task import PointNavFixedTask
 from gibson2.tasks.point_nav_random_task import PointNavRandomTask
@@ -13,6 +12,7 @@ from gibson2.external.pybullet_tools.utils import stable_z_on_aabb
 from gibson2.sensors.bump_sensor import BumpSensor
 
 from vl_nav.tasks.visual_object_nav_task import VisualObjectNavTask
+from vl_nav.envs.env_base import VLNBaseEnv
 
 from transforms3d.euler import euler2quat
 from collections import OrderedDict
@@ -24,7 +24,7 @@ import time
 import logging
 
 
-class iGibsonEnv(BaseEnv):
+class iGibsonEnv(VLNBaseEnv):
     """
     iGibson Environment (OpenAI Gym interface)
     """
@@ -335,7 +335,7 @@ class iGibsonEnv(BaseEnv):
         :param body_id: pybullet body id
         :return: whether the given body_id has no collision
         """
-        self.simulator_step()
+        self.simulator_step(sync=False)
         collisions = list(p.getContactPoints(bodyA=body_id))
 
         if logging.root.level <= logging.DEBUG:  # Only going into this if it is for logging --> efficiency
@@ -413,7 +413,7 @@ class iGibsonEnv(BaseEnv):
         # land for maximum 1 second, should fall down ~5 meters
         max_simulator_step = int(1.0 / self.action_timestep)
         for _ in range(max_simulator_step):
-            self.simulator_step()
+            self.simulator_step(sync=False)
             if len(p.getContactPoints(bodyA=body_id)) > 0:
                 land_success = True
                 break

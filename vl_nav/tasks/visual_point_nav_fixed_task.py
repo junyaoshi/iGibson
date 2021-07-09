@@ -81,6 +81,8 @@ class VisualPointNavFixedTask(BaseTask):
         if env.mode != 'gui':
             return
 
+        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+
         cyl_length = 0.2
         self.initial_pos_vis_obj = VisualMarker(
             visual_shape=p.GEOM_CYLINDER,

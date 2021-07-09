@@ -21,7 +21,7 @@ from vl_nav.envs.igibson_env import iGibsonEnv
 yaml_filename = 'turtlebot_object_nav_stadium.yaml'
 mode = 'gui'
 action_timestep = 1.0 / 10.0
-physics_timestep = 1.0 / 120.0
+physics_timestep = 1.0 / 40.0
 device_idx = 1
 
 # object params
@@ -60,7 +60,7 @@ def main():
     #         '2ae75c0f4bf43142e76bc197b3a3ffc0', '2ae75c0f4bf43142e76bc197b3a3ffc0.urdf'
     #     )
     # )
-    vis_obj = iGisbonObject(name='floor_lamp')
+    vis_obj = iGisbonObject(name='speaker_system')
     if task == 'visual_point_nav_fixed':
         env_task = VisualPointNavFixedTask(
             env=env,

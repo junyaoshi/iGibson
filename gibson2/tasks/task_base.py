@@ -1,3 +1,4 @@
+import logging
 from abc import abstractmethod, ABCMeta
 
 
@@ -50,7 +51,7 @@ class BaseTask():
         # reward = 0.0
         # for reward_function in self.reward_functions:
         #     func_reward = reward_function.get_reward(self, env)
-        #     print(f'iGibson ||| function: {reward_function} | function reward: {func_reward}')
+        #     logging.info(f'iGibson ||| function: {reward_function} | function reward: {func_reward}')
         #     reward += func_reward
 
         return reward, info
