@@ -40,7 +40,7 @@ class VisualObjectNavTask(BaseTask):
         # maximum distance between object and initial robot position
         self.object_dist_max = self.config.get('object_dist_max', 10.0)
         # minimum distance between objects
-        self.object_dist_keepout = self.config.get('object_dist_keepout', 3.0)
+        # self.object_dist_keepout = self.config.get('object_dist_keepout', 3.0)
 
         self.reward_type = self.config.get('reward_type', 'l2')
         self.termination_conditions = [
@@ -58,7 +58,8 @@ class VisualObjectNavTask(BaseTask):
         self.initial_pos = np.array(self.config.get('initial_pos', [0, 0, 0]))
         self.initial_orn = np.array(self.config.get('initial_orn', [0, 0, 0]))
         self.goal_format = self.config.get('goal_format', 'polar')
-        self.dist_tol = self.termination_conditions[-1].dist_tol
+        self.goal_buffer_dist = self.config.get('goal_buffer_dist', 0.5)
+        self.object_keepout_buffer_dist = self.config.get('object_keepout_buffer_dist', 0.5)
 
         self.visual_object_at_initial_pos = self.config.get(
             'visual_object_at_initial_pos', True
@@ -107,7 +108,10 @@ class VisualObjectNavTask(BaseTask):
             object_max_radius = max(abs(xmax - xmin) / 2., abs(ymax - ymin) / 2.)
             max_radius = max(object_max_radius, max_radius)
         self.max_radius = max_radius
-        self.termination_conditions[-1].dist_tol = self.max_radius + 0.2
+        self.dist_tol = self.max_radius + self.goal_buffer_dist
+        self.termination_conditions[-1].dist_tol = self.dist_tol
+        self.reward_functions[-1].dist_tol = self.dist_tol
+        self.object_dist_keepout = self.max_radius * 2 + self.object_keepout_buffer_dist
         self.sample_goal_object()
 
     def sample_goal_object(self):
