@@ -20,7 +20,7 @@ from vl_nav.objects.igibson_object import iGisbonObject
 from vl_nav.envs.igibson_env import iGibsonEnv
 
 # env params
-yaml_filename = 'turtlebot_CLIP.yaml'
+yaml_filename = 'turtlebot_clip.yaml'
 mode = 'gui'
 action_timestep = 1.0 / 10.0
 physics_timestep = 1.0 / 120.0

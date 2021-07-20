@@ -19,9 +19,10 @@ velocity: 1.0
 
 # task
 task: visual_object_nav
-object_dist_min: 4.0
+object_dist_min: 3.0
 object_dist_max: 8.0 # 10.0
 object_dist_keepout: 2.5  # minimum distances between objects
+object_keepout_buffer_dist: 0.5  # object_keepout_buffer_dist + max object radius * 2 = actual object keepout dist
 num_objects: 5
 goal_format: polar
 task_obs_dim: 5
@@ -39,6 +40,7 @@ discount_factor: 0.99
 dist_tol: 1.0  # 0.5  # 0.36  # body width
 max_step: 500  # 500
 max_collisions_allowed: 500 # 500
+goal_buffer_dist: 1.2  # goal_buffer_dist + max object radius = actual dist_tol
 
 # misc config
 initial_pos_z_offset: 0.1
