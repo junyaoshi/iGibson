@@ -1,4 +1,4 @@
-from gibson2.reward_functions.collision_reward import CollisionReward
+from igibson.reward_functions.collision_reward import CollisionReward
 
 
 class VLNCollisionReward(CollisionReward):

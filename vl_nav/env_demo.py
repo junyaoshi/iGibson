@@ -2,14 +2,14 @@ import os
 import numpy as np
 from time import time
 
-import gibson2
+import igibson
 import pybullet as p
 import logging
 
-from gibson2.objects.cube import Cube
-from gibson2.objects.visual_marker import VisualMarker
-from gibson2.objects.articulated_object import ArticulatedObject, RBOObject
-from gibson2.render.profiler import Profiler
+from igibson.objects.cube import Cube
+from igibson.objects.visual_marker import VisualMarker
+from igibson.objects.articulated_object import ArticulatedObject, RBOObject
+from igibson.render.profiler import Profiler
 
 from vl_nav.tasks.visual_point_nav_fixed_task import VisualPointNavFixedTask
 from vl_nav.tasks.visual_point_nav_random_task import VisualPointNavRandomTask
@@ -38,7 +38,7 @@ fov = 60
 
 
 def main():
-    config_filename = os.path.join(gibson2.vlnav_config_path, yaml_filename)
+    config_filename = os.path.join(igibson.vlnav_config_path, yaml_filename)
     env = iGibsonEnv(
         config_file=config_filename,
         mode=mode,
@@ -56,7 +56,7 @@ def main():
     # vis_obj = RBOObject(name='tripod')
     # vis_obj = ArticulatedObject(
     #     filename=os.path.join(
-    #         gibson2.ig_dataset_path, 'objects', 'basket',
+    #         igibson.ig_dataset_path, 'objects', 'basket',
     #         '2ae75c0f4bf43142e76bc197b3a3ffc0', '2ae75c0f4bf43142e76bc197b3a3ffc0.urdf'
     #     )
     # )

@@ -1,17 +1,17 @@
-from gibson2.tasks.task_base import BaseTask
+from igibson.tasks.task_base import BaseTask
 import pybullet as p
-from gibson2.scenes.igibson_indoor_scene import InteractiveIndoorScene
-from gibson2.scenes.gibson_indoor_scene import StaticIndoorScene
-from gibson2.termination_conditions.max_collision import MaxCollision
-from gibson2.termination_conditions.timeout import Timeout
-from gibson2.termination_conditions.out_of_bound import OutOfBound
-from gibson2.termination_conditions.point_goal import PointGoal
-from gibson2.reward_functions.potential_reward import PotentialReward
-from gibson2.reward_functions.collision_reward import CollisionReward
-from gibson2.reward_functions.point_goal_reward import PointGoalReward
+from igibson.scenes.igibson_indoor_scene import InteractiveIndoorScene
+from igibson.scenes.gibson_indoor_scene import StaticIndoorScene
+from igibson.termination_conditions.max_collision import MaxCollision
+from igibson.termination_conditions.timeout import Timeout
+from igibson.termination_conditions.out_of_bound import OutOfBound
+from igibson.termination_conditions.point_goal import PointGoal
+from igibson.reward_functions.potential_reward import PotentialReward
+from igibson.reward_functions.collision_reward import CollisionReward
+from igibson.reward_functions.point_goal_reward import PointGoalReward
 
-from gibson2.utils.utils import l2_distance, rotate_vector_3d, cartesian_to_polar
-from gibson2.objects.visual_marker import VisualMarker
+from igibson.utils.utils import l2_distance, rotate_vector_3d, cartesian_to_polar
+from igibson.objects.visual_marker import VisualMarker
 
 import numpy as np
 
@@ -25,7 +25,7 @@ class VisualPointNavFixedTask(BaseTask):
     def __init__(self, env, target_pos=[5, 5, 0], target_pos_vis_obj=None):
         """
         :param target_pos: [x, y, z]
-        :param target_pos_vis_obj: an instance of gibson2.objects
+        :param target_pos_vis_obj: an instance of igibson.objects
         """
         super(VisualPointNavFixedTask, self).__init__(env)
         self.reward_type = self.config.get('reward_type', 'l2')

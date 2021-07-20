@@ -1,5 +1,5 @@
 from vl_nav.tasks.visual_point_nav_fixed_task import VisualPointNavFixedTask
-from gibson2.utils.utils import l2_distance
+from igibson.utils.utils import l2_distance
 import pybullet as p
 import logging
 import numpy as np
@@ -14,7 +14,7 @@ class VisualPointNavRandomTask(VisualPointNavFixedTask):
     def __init__(self, env, target_pos_vis_obj=None):
         """
         :param target_pos: [x, y, z]
-        :param target_pos_vis_obj: an instance of gibson2.objects
+        :param target_pos_vis_obj: an instance of igibson.objects
         """
         super(VisualPointNavRandomTask, self).__init__(env=env, target_pos_vis_obj=target_pos_vis_obj)
         self.target_dist_min = self.config.get('target_dist_min', 1.0)

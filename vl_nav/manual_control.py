@@ -4,14 +4,14 @@ import cv2
 import numpy as np
 from time import time
 
-import gibson2
+import igibson
 import pybullet as p
 import logging
 
-from gibson2.objects.cube import Cube
-from gibson2.objects.visual_marker import VisualMarker
-from gibson2.objects.articulated_object import ArticulatedObject, RBOObject
-from gibson2.render.profiler import Profiler
+from igibson.objects.cube import Cube
+from igibson.objects.visual_marker import VisualMarker
+from igibson.objects.articulated_object import ArticulatedObject, RBOObject
+from igibson.render.profiler import Profiler
 
 from vl_nav.tasks.visual_point_nav_fixed_task import VisualPointNavFixedTask
 from vl_nav.tasks.visual_point_nav_random_task import VisualPointNavRandomTask
@@ -29,7 +29,7 @@ fov = 75
 
 # data saving
 trial_name = '0630_1'
-data_dir = os.path.join(gibson2.vlnav_path, 'manual_control_images', trial_name)
+data_dir = os.path.join(igibson.vlnav_path, 'manual_control_images', trial_name)
 if not os.path.isdir(data_dir):
     os.mkdir(data_dir)
 
@@ -44,7 +44,7 @@ turtlebot_keys_to_actions = {
 
 
 def main():
-    config_filename = os.path.join(gibson2.vlnav_config_path, yaml_filename)
+    config_filename = os.path.join(igibson.vlnav_config_path, yaml_filename)
     env = iGibsonEnv(
         config_file=config_filename,
         mode=mode,

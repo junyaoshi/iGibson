@@ -1,7 +1,7 @@
 import os
-import gibson2
+import igibson
 import pybullet as p
-from gibson2.objects.articulated_object import ArticulatedObject
+from igibson.objects.articulated_object import ArticulatedObject
 
 
 class iGisbonObject(ArticulatedObject):
@@ -11,7 +11,7 @@ class iGisbonObject(ArticulatedObject):
     """
 
     def __init__(self, name, scale=1):
-        dirname = os.path.join(gibson2.ig_dataset_path, 'objects', name)
+        dirname = os.path.join(igibson.ig_dataset_path, 'objects', name)
         object_dir = [f.path for f in os.scandir(dirname) if f.is_dir()][0]
         object_name = os.path.basename(object_dir)
         filename = os.path.join(object_dir, f'{object_name}.urdf')

@@ -1,15 +1,15 @@
-from gibson2.envs.igibson_env import iGibsonEnv
-from gibson2.envs.parallel_env import ParallelNavEnv
+from igibson.envs.igibson_env import iGibsonEnv
+from igibson.envs.parallel_env import ParallelNavEnv
 from time import time
 import functools
-import gibson2
+import igibson
 import os
-from gibson2.render.profiler import Profiler
+from igibson.render.profiler import Profiler
 import logging
 
 
 def main():
-    config_filename = os.path.join(gibson2.vlnav_config_path, 'turtlebot_point_nav_stadium.yaml')
+    config_filename = os.path.join(igibson.vlnav_config_path, 'turtlebot_point_nav_stadium.yaml')
     env_num = 64
 
     def load_env():
