@@ -56,12 +56,6 @@ physics_timestep = 1.0 / 120.0
 device_idx = 1
 fov = 75
 
-# data saving
-trial_name = '0630_1'
-data_dir = os.path.join(igibson.vlnav_path, 'manual_control_images', trial_name)
-if not os.path.isdir(data_dir):
-    os.mkdir(data_dir)
-
 # keys to action
 robot_keys_to_actions = {
     'w': [0.5, 0.5],

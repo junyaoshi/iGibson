@@ -5,7 +5,7 @@ import logging
 
 __version__ = "1.0.3"
 
-import gibson2
+import igibson
 
 logging.getLogger().setLevel(logging.INFO)
 
