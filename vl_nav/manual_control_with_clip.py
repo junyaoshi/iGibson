@@ -185,14 +185,6 @@ def main():
             env.close()
             running = False
             pressed_keys = []
-        if ord('c') in pressed_keys:
-            print('Saving an image from RobotView...')
-            img_path = os.path.join(data_dir, f'img_{int(time())}.png')
-            frame = get_robot_cam_frame()
-            assert frame is not None
-            frame = (frame[:, :, :3] * 255).astype(np.uint8)
-            cv2.imwrite(img_path, frame)
-            pressed_keys = []
         if ord('8') in pressed_keys:
             print('Forward...')
             env.step(keys_to_actions['w'])

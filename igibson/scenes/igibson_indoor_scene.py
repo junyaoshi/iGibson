@@ -759,6 +759,9 @@ class InteractiveIndoorScene(StaticIndoorScene):
         visual_mesh_to_material = []
         num_loaded = 0
         for int_object in self.objects_by_name:
+            if int_object == 'toilet_30':
+                print('toilet_30')
+                pass
             obj = self.objects_by_name[int_object]
             new_ids = obj.load()
             for id in new_ids:

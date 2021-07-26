@@ -16,7 +16,6 @@ from igibson.reward_functions.collision_reward import CollisionReward
 from igibson.utils.utils import l2_distance, rotate_vector_3d, cartesian_to_polar
 from igibson.objects.visual_marker import VisualMarker
 
-# from vl_nav.reward_functions.collision_reward import CollisionReward
 from vl_nav.objects.igibson_object import iGisbonObject
 
 import numpy as np
@@ -39,8 +38,6 @@ class VisualObjectNavTask(BaseTask):
         self.object_dist_min = self.config.get('object_dist_min', 1.0)
         # maximum distance between object and initial robot position
         self.object_dist_max = self.config.get('object_dist_max', 10.0)
-        # minimum distance between objects
-        # self.object_dist_keepout = self.config.get('object_dist_keepout', 3.0)
 
         self.reward_type = self.config.get('reward_type', 'l2')
         self.termination_conditions = [
@@ -111,6 +108,7 @@ class VisualObjectNavTask(BaseTask):
         self.dist_tol = self.max_radius + self.goal_buffer_dist
         self.termination_conditions[-1].dist_tol = self.dist_tol
         self.reward_functions[-1].dist_tol = self.dist_tol
+        # minimum distance between objects
         self.object_dist_keepout = self.max_radius * 2 + self.object_keepout_buffer_dist
         self.sample_goal_object()
 

@@ -10,9 +10,9 @@ from igibson.sensors.vision_sensor import VisionSensor
 from igibson.robots.robot_base import BaseRobot
 from igibson.external.pybullet_tools.utils import stable_z_on_aabb
 from igibson.sensors.bump_sensor import BumpSensor
+from igibson.envs.env_base import BaseEnv
 
 from vl_nav.tasks.visual_object_nav_task import VisualObjectNavTask
-from vl_nav.envs.env_base import VLNBaseEnv
 
 from transforms3d.euler import euler2quat
 from collections import OrderedDict
@@ -24,7 +24,7 @@ import time
 import logging
 
 
-class iGibsonEnv(VLNBaseEnv):
+class iGibsonEnv(BaseEnv):
     """
     iGibson Environment (OpenAI Gym interface)
     """
@@ -335,7 +335,7 @@ class iGibsonEnv(VLNBaseEnv):
         :param body_id: pybullet body id
         :return: whether the given body_id has no collision
         """
-        self.simulator_step(sync=False)
+        self.simulator_step()
         collisions = list(p.getContactPoints(bodyA=body_id))
 
         if logging.root.level <= logging.DEBUG:  # Only going into this if it is for logging --> efficiency
@@ -413,7 +413,7 @@ class iGibsonEnv(VLNBaseEnv):
         # land for maximum 1 second, should fall down ~5 meters
         max_simulator_step = int(1.0 / self.action_timestep)
         for _ in range(max_simulator_step):
-            self.simulator_step(sync=False)
+            self.simulator_step()
             if len(p.getContactPoints(bodyA=body_id)) > 0:
                 land_success = True
                 break
