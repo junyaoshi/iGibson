@@ -236,8 +236,8 @@ def download_ig_dataset():
     """
     Download iGibson dataset
     """
-    while input("Do you agree to the terms for using iGibson dataset (http://svl.stanford.edu/igibson/assets/GDS_agreement.pdf)? [y/n]") != "y":
-        print("You need to agree to the terms for using iGibson dataset.")
+    # while input("Do you agree to the terms for using iGibson dataset (http://svl.stanford.edu/igibson/assets/GDS_agreement.pdf)? [y/n]") != "y":
+    #     print("You need to agree to the terms for using iGibson dataset.")
 
     if not os.path.exists(igibson.ig_dataset_path):
         os.makedirs(igibson.ig_dataset_path)
