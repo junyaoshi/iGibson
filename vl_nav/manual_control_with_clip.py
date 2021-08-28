@@ -30,7 +30,7 @@ from alf.utils.video_recorder import VideoRecorder
 # clip params
 scene_id = "Rs_int"
 use_colors = False
-target_name = 'grey toilet' if use_colors else 'toilet'
+target_name = 'grey bed' if use_colors else 'bed'
 record_file = f'/home/junyaoshi/Desktop/CLIP_videos/{scene_id}_{target_name.replace(" ", "_")}' \
               f'{"_with_colors_" if use_colors else "_"}0718_3.mp4'
 fps = 10
